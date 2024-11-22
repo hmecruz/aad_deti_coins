@@ -198,39 +198,51 @@ int main(int argc,char **argv)
         deti_coins_cpu_search();
         break;
 #ifdef DETI_COINS_CPU_AVX_SEARCH
-      case '1':
+    case '1':
         printf("searching for %u seconds using deti_coins_cpu_avx_search()\n",seconds);
         fflush(stdout);
         deti_coins_cpu_avx_search(n_random_words);
         break;
 #endif
 #ifdef DETI_COINS_CPU_AVX2_SEARCH
-      case '2':
+    case '2':
         printf("searching for %u seconds using deti_coins_cpu_avx2_search()\n",seconds);
         fflush(stdout);
         deti_coins_cpu_avx2_search(n_random_words);
         break;
 #endif
 #ifdef DETI_COINS_CPU_NEON_SEARCH
-      case '3':
+    case '3':
         printf("searching for %u seconds using deti_coins_cpu_neon_search()\n",seconds);
         fflush(stdout);
         deti_coins_cpu_neon_search(n_random_words);
         break;
 #endif
 #ifdef DETI_COINS_CUDA_SEARCH
-      case '4':
+    case '4':
         printf("searching for %u seconds using deti_coins_cuda_search()\n",seconds);
         fflush(stdout);
         deti_coins_cuda_search(n_random_words);
         break;
 #endif
 #ifdef DETI_COINS_CPU_SPECIAL_SEARCH
-      case '9':
-        printf("searching for %u seconds using deti_coins_cpu_special_search()\n",seconds);
+    case '9': {
+        const char *special_text; // Declare the variable inside the block
+
+        // Check if the user passed a special text argument
+        if (argc > 3) {
+            special_text = argv[3]; // Use the provided argument
+        } else {
+            special_text = "#DEFAULT"; // Default special text if no argument is passed
+        }
+
+        printf("searching for %u seconds using deti_coins_cpu_special_search()\n", seconds);
+        printf("Special text: %s\n", special_text);
         fflush(stdout);
-        deti_coins_cpu_special_search();
+
+        deti_coins_cpu_special_search(special_text);
         break;
+    }
 #endif
     }
     return 0;
@@ -238,21 +250,21 @@ int main(int argc,char **argv)
   fprintf(stderr,"usage: %s -t                               # MD5 hash tests\n",argv[0]);
   fprintf(stderr,"       %s -s0 [seconds] [ignored]          # search for DETI coins using md5_cpu()\n",argv[0]);
 #ifdef DETI_COINS_CPU_AVX_SEARCH
-  fprintf(stderr,"       %s -s1 [seconds] [n_random_words]   # search for DETI coins using md5_cpu_avx()\n",argv[0]);
+    fprintf(stderr,"       %s -s1 [seconds] [n_random_words]   # search for DETI coins using md5_cpu_avx()\n",argv[0]);
 #endif
 #ifdef DETI_COINS_CPU_AVX2_SEARCH
-  fprintf(stderr,"       %s -s2 [seconds] [n_random_words]   # search for DETI coins using md5_cpu_avx2()\n",argv[0]);
+    fprintf(stderr,"       %s -s2 [seconds] [n_random_words]   # search for DETI coins using md5_cpu_avx2()\n",argv[0]);
 #endif
 #ifdef DETI_COINS_CPU_NEON_SEARCH
-  fprintf(stderr,"       %s -s3 [seconds] [n_random_words]   # search for DETI coins using md5_cpu_neon()\n",argv[0]);
+    fprintf(stderr,"       %s -s3 [seconds] [n_random_words]   # search for DETI coins using md5_cpu_neon()\n",argv[0]);
 #endif
 #ifdef DETI_COINS_CUDA_SEARCH
-  fprintf(stderr,"       %s -s4 [seconds] [n_random_words]   # search for DETI coins using CUDA\n",argv[0]);
+    fprintf(stderr,"       %s -s4 [seconds] [n_random_words]   # search for DETI coins using CUDA\n",argv[0]);
 #endif
 #ifdef DETI_COINS_CPU_SPECIAL_SEARCH
-  fprintf(stderr,"       %s -s9 [seconds] [ignored]          # special search for DETI coins using md5_cpu()\n",argv[0]);
+    fprintf(stderr,"       %s -s9 [seconds] [special_text]     # special search for DETI coins using md5_cpu()\n",argv[0]);
 #endif
-  fprintf(stderr,"                                           #   seconds is the amount of time spent in the search\n");
-  fprintf(stderr,"                                           #   n_random_words is the number of 4-byte words to use\n");
-  return 1;
+    fprintf(stderr,"                                           #   seconds is the amount of time spent in the search\n");
+    fprintf(stderr,"                                           #   n_random_words is the number of 4-byte words to use\n");
+    return 1;
 }

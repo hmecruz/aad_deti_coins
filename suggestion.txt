@@ -1,0 +1,23 @@
+// useful data type
+
+typedef union
+{
+    u32_t coin_as_ints[13]; // 13 4-byte integers
+    char coin_as_chars[51]; // 52 = 13 * 4 byte
+}
+coin_t;
+
+// Initialize coin as a string
+
+coin_t coin;
+if(snprintf(coin.coin_as_chars, 52, "DETI coin bla bla bla\n") != 52)
+{
+    fprinf(stderr, "not exactly 52 bytes...\n");
+    exit(1)
+}
+
+// Read the coin as integers 
+
+for(idx = 0; idx < 13\; idx++)
+    ... coin.coin_as_ints[idx] ...
+
