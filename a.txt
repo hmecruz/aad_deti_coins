@@ -11,8 +11,8 @@
 #ifndef DETI_COINS_CPU_AVX_SEARCH
 #define DETI_COINS_CPU_AVX_SEARCH
 
-#define VAR1_IDX_AVX 6
-#define VAR2_IDX_AVX 9
+#define VAR1_IDX 5
+#define VAR2_IDX 6
 
 static void deti_coins_cpu_avx_search(u32_t n_random_words)
 {
@@ -40,15 +40,45 @@ static void deti_coins_cpu_avx_search(u32_t n_random_words)
 
         // Insert the var1 and var2 to try different combinations
         for (lane = 0u; lane < 4u; lane++) {
-            coins[lane].coin_as_ints[VAR1_IDX_AVX] = var1;
-            coins[lane].coin_as_ints[VAR2_IDX_AVX] = var2;
+            coins[lane].coin_as_ints[VAR1_IDX] = var1;
+            coins[lane].coin_as_ints[VAR2_IDX] = var2;
             for (idx = 0u; idx < 13u; idx++) {
                 interleaved_data[4u * idx + lane] = coins[lane].coin_as_ints[idx];
             }
         }
+
+        // Print the interleaved_data 
+        printf("Interleaved Data:\n");
+        for (idx = 0u; idx < 13u; idx++) {
+            printf("Word %2u: ", idx);
+            for (lane = 0u; lane < 4u; lane++) {
+                printf("Lane %u: 0x%08x ", lane, interleaved_data[4u * idx + lane]);
+            }
+            printf("\n");
+        }
+        sleep(1);
         
         // Compute MD5 hashes for the interleaved coins using AVX
         md5_cpu_avx((v4si *)interleaved_data, (v4si *)interleaved_hash);
+
+        // Print the interleaved_data 
+        printf("Interleaved Data:\n");
+        for (idx = 0u; idx < 13u; idx++) {
+            printf("Word %2u: ", idx);
+            for (lane = 0u; lane < 4u; lane++) {
+                printf("Lane %u: 0x%08x ", lane, interleaved_data[4u * idx + lane]);
+            }
+            printf("\n");
+        }
+       
+        printf("MD5 Hashes (Interleaved):\n");
+        for (idx = 0; idx < 4; idx++) {
+            printf("Lane %u: %08x %08x %08x %08x\n", idx,
+                interleaved_hash[4 * 0 + idx],
+                interleaved_hash[4 * 1 + idx],
+                interleaved_hash[4 * 2 + idx],
+                interleaved_hash[4 * 3 + idx]);
+        }
 
         // Check each coin's hash for trailing zeros and determine if it's a DETI coin
         for (lane = 0u; lane < 4u; lane++) {
@@ -57,14 +87,19 @@ static void deti_coins_cpu_avx_search(u32_t n_random_words)
                 hash[idx] = interleaved_hash[4u * idx + lane];
             }
 
+            // Debugging extracted hash
+            printf("Extracted Hash for lane %u: %08x %08x %08x %08x\n",
+                lane, hash[0], hash[1], hash[2], hash[3]);
+
             // Byte-reverse and check trailing zeros for each coin
             hash_byte_reverse(hash);
 
             n = deti_coin_power(hash);
+
             if (n >= 32u) {
                 save_deti_coin(coins[lane].coin_as_ints);  // Save the valid DETI coin
                 n_coins++;
-                printf("Found DETI coin in lane %u: %s\n", lane, coins[lane].coin_as_chars);  // Print the found coin
+                printf("Found DETI coin: %s\n", coins[lane].coin_as_chars);  // Print the found coin
             }
         }
 
@@ -85,3 +120,26 @@ static void deti_coins_cpu_avx_search(u32_t n_random_words)
 }
 
 #endif
+
+
+
+MD5 Hashes (Interleaved):
+Lane 0: c04adf9e 03870c46 2bdd6846 dc864cb3
+Lane 1: 1f745d49 42540525 93db465a 8136ce8f
+Lane 2: 6a01246a 3c6ed3b5 d3d7cb78 5aa2d052
+Lane 3: 14442ccd cfc0ade7 1f312992 8ea94bb6
+Lane 4: dfe54778 fe0abbb9 c84141cc 70c04375
+Lane 5: e3ddc4f4 227d2ea8 5b081456 73448943
+Lane 6: 3d4de0bb 246bcb3d 9e5a7a9c 7e0cf719
+Lane 7: f0c42242 f3d73518 98f91fce 4cb79814
+Extracted Reverse Hash for lane 0: 9edf4ac0 495d741f 6a24016a cd2c4414
+MD5 Hashes (Interleaved):
+Lane 0: c04adf9e 03870c46 2bdd6846 dc864cb3
+Lane 1: 1f745d49 42540525 93db465a 8136ce8f
+Lane 2: 6a01246a 3c6ed3b5 d3d7cb78 5aa2d052
+Lane 3: 14442ccd cfc0ade7 1f312992 8ea94bb6
+Lane 4: dfe54778 fe0abbb9 c84141cc 70c04375
+Lane 5: e3ddc4f4 227d2ea8 5b081456 73448943
+Lane 6: 3d4de0bb 246bcb3d 9e5a7a9c 7e0cf719
+Lane 7: f0c42242 f3d73518 98f91fce 4cb79814
+Extracted Reverse Hash for lane 1: 460c8703 25055442 b5d36e3c e7adc0cf

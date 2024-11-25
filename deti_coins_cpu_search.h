@@ -51,7 +51,21 @@ static void deti_coins_cpu_search(void)
         //
         // byte-reverse each word (that's how the MD5 message digest is printed...)
         //
+        printf("Hash: ");
+        for (idx = 0; idx < 4u; idx++) {
+            printf("%08x ", hash[idx]); // Print each 32-bit word in hexadecimal
+        }
+        printf("\n");
+
+
         hash_byte_reverse(hash);
+
+        printf("Reverse Hash: ");
+        for (idx = 0; idx < 4u; idx++) {
+            printf("%08x ", hash[idx]); // Print each 32-bit word in hexadecimal
+        }
+        printf("\n");
+
         //
         // count the number of trailing zeros of the MD5 hash
         //
