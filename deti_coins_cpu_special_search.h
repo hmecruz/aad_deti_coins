@@ -25,24 +25,22 @@ static void deti_coins_cpu_special_search(const char *special_text)
     // Validate special_text length
     special_text_length = strlen(special_text);
     if (special_text_length > max_special_text_length) {
-        fprintf(stderr, "Error: Special text is too long (max %zu characters allowed, got %zu).\n",
-                max_special_text_length, special_text_length);
+        fprintf(stderr, "Error: Special text is too long (max %zu characters allowed, got %zu).\n", max_special_text_length, special_text_length);
         exit(1);
     }
-
-    // Fill the coin with spaces
-    memset(coin.coin_as_chars, ' ', 52);  // Fill the entire coin array with spaces
 
     // Format the coin with "DETI coin " + special_text + "\n"
     snprintf(coin.coin_as_chars, 52, "DETI coin %s", special_text);
 
+    // Ensure that the random characters are properly initialized (positions 10 to 50)
+    for (idx = 10u + special_text_length; idx < 51u; idx++) {
+        coin.coin_as_chars[idx] = ' '; // Fill the remaining with spaces
+    }
+
     // Ensure the string is exactly 52 bytes (including mandatory newline at the end)
     coin.coin_as_chars[51] = '\n';  // Set the last byte as a newline
 
-    // Print the resulting coin as a string
-    printf("Created DETI coin: %s\n", coin.coin_as_chars);
-    fflush(stdout);
-
+    
     // Perform the search for DETI coins
     for (n_attempts = n_coins = 0ul; stop_request == 0; n_attempts++) {
         // Compute MD5 hash using the coin as an array of integers
@@ -63,7 +61,7 @@ static void deti_coins_cpu_special_search(const char *special_text)
         }
 
         // Try the next combination (byte range: 0x20..0x7E)
-        for (idx = 10u; idx < 13u * 4u - 1u && coin.coin_as_chars[idx] == (u08_t)126; idx++) {
+        for (idx = 10u + special_text_length; idx < 13u * 4u - 1u && coin.coin_as_chars[idx] == (u08_t)126; idx++) {
             coin.coin_as_chars[idx] = ' ';
         }
         if (idx < 13u * 4u - 1u) {

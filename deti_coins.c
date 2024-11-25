@@ -23,6 +23,11 @@
 # define USE_CUDA 0
 #endif
 
+#ifndef __AVX__
+# define __AVX__
+#endif
+
+
 
 //
 // unsigned integer data types and some useful functions (in cpu_utilities.h)
@@ -131,9 +136,9 @@ static void alarm_signal_handler(int dummy)
 #include "deti_coins_cpu_special_search.h"
 
 //#include "search_utilities.h"
-//#ifdef MD5_CPU_AVX
-//# include "deti_coins_cpu_avx_search.h"
-//#endif
+#ifdef MD5_CPU_AVX
+#include "deti_coins_cpu_avx_search.h"
+#endif
 //#ifdef MD5_CPU_AVX2
 //# include "deti_coins_cpu_avx2_search.h"
 //#endif

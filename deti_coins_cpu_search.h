@@ -59,10 +59,9 @@ static void deti_coins_cpu_search(void)
         //
         // if the number of trailing zeros is >= 32 we have a DETI coin
         //
-        if(n >= 32u)
-        {
-        save_deti_coin(coin);
-        n_coins++;
+        if(n >= 32u){
+            save_deti_coin(coin);
+            n_coins++;
         }
         //
         // try next combination (byte range: 0x20..0x7E)
