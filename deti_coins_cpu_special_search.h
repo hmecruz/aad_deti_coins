@@ -24,9 +24,11 @@ static void deti_coins_cpu_special_search(const char *special_text)
 
     // Initialize the DETI coin with the mandatory prefix and alignment
     initialize_deti_coin(&coin);
+    //printf("DETI coin: %sSeparator\n", coin.coin_as_chars);  // Print the coin as a string
 
     // Insert the special text starting at the required index (10)
     insert_text_into_coin_at(&coin, special_text, 10);
+    //printf("DETI coin: %sSeparator\n", coin.coin_as_chars);  // Print the coin as a string
 
     
     // Perform the search for DETI coins

@@ -51,6 +51,7 @@ static inline void initialize_deti_coin(coin_t *coin) {
         coin->coin_as_chars[i] = ' '; // Fill remaining space with spaces
     }
     coin->coin_as_chars[51] = '\n'; // Add mandatory newline at the end
+
 }
 
 /**
@@ -87,5 +88,44 @@ static inline void print_coin(const coin_t *coin) {
     }
     printf("\n");
 }
+
+
+/**
+ * @brief Computes the next ASCII code combination in the range [0x20, 0x7E].
+ *
+ * @param var Current ASCII code combination (e.g., 0x20202020).
+ * @return The next valid ASCII code combination or 0x20202020 if all combinations are visited.
+ */
+static inline u32_t next_ascii_code(u32_t var) {
+    // Increment the value
+    var += 1;
+
+    // Check the first byte 
+    if ((var & 0x000000FF) != 0x0000007F) {
+        return var;
+    }
+    var += 0x000000A1;
+
+    // Check the second byte
+    if ((var & 0x0000FF00) != 0x00007F00) {
+        return var;
+    }
+    var += 0x0000A100; 
+
+    // Check the third byte
+    if ((var & 0x00FF0000) != 0x007F0000) {
+        return var;
+    }
+    var += 0x00A10000;
+
+    // Check the fourth byte (most significant byte)
+    if ((var & 0xFF000000) != 0x7F000000) {
+        return var;
+    }
+    var = 0x20202020; // All combinations are visited, reset to initial state
+
+    return var;
+}
+
 
 #endif // SEARCH_UTILITIES_H
