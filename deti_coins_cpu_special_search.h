@@ -5,40 +5,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "search_utilities.h" // Include the utility header
 
 #ifndef DETI_COINS_CPU_SPECIAL_SEARCH
 #define DETI_COINS_CPU_SPECIAL_SEARCH
 
-typedef union {
-    u32_t coin_as_ints[13];    // 13 4-byte integers (total size 52 bytes)
-    char coin_as_chars[52];    // 52 bytes = 13 * 4 bytes
-} coin_t;
 
 static void deti_coins_cpu_special_search(const char *special_text)
 {
     u32_t n, idx, hash[4u];
     u64_t n_attempts, n_coins;
     coin_t coin;
-    size_t special_text_length;
-    const size_t max_special_text_length = 13u * 4u - 11u; // Available space for special text (maxlen = 52 - '\n' - 'DETI coin ')
-
-    // Validate special_text length
-    special_text_length = strlen(special_text);
-    if (special_text_length > max_special_text_length) {
-        fprintf(stderr, "Error: Special text is too long (max %zu characters allowed, got %zu).\n", max_special_text_length, special_text_length);
-        exit(1);
+    
+    // Validate special_text length using the utility function
+    if (validate_text_length(special_text)) {
+        exit(1); // Exit if the text length is invalid
     }
 
-    // Format the coin with "DETI coin " + special_text + "\n"
-    snprintf(coin.coin_as_chars, 52, "DETI coin %s", special_text);
+    // Initialize the DETI coin with the mandatory prefix and alignment
+    initialize_deti_coin(&coin);
 
-    // Ensure that the random characters are properly initialized (positions 10 to 50)
-    for (idx = 10u + special_text_length; idx < 51u; idx++) {
-        coin.coin_as_chars[idx] = ' '; // Fill the remaining with spaces
-    }
-
-    // Ensure the string is exactly 52 bytes (including mandatory newline at the end)
-    coin.coin_as_chars[51] = '\n';  // Set the last byte as a newline
+    // Insert the special text starting at the required index (10)
+    insert_text_into_coin_at(&coin, special_text, 10);
 
     
     // Perform the search for DETI coins
@@ -61,7 +49,7 @@ static void deti_coins_cpu_special_search(const char *special_text)
         }
 
         // Try the next combination (byte range: 0x20..0x7E)
-        for (idx = 10u + special_text_length; idx < 13u * 4u - 1u && coin.coin_as_chars[idx] == (u08_t)126; idx++) {
+        for (idx = 10u + strlen(special_text); idx < 13u * 4u - 1u && coin.coin_as_chars[idx] == (u08_t)126; idx++) {
             coin.coin_as_chars[idx] = ' ';
         }
         if (idx < 13u * 4u - 1u) {

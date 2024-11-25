@@ -26,7 +26,7 @@ CUDA_ARCH = sm_75
 # source code files
 #
 SRC       = deti_coins.c
-H_FILES   = cpu_utilities.h
+H_FILES   = cpu_utilities.h search_utilities.h
 H_FILES  += md5.h md5_test_data.h md5_cpu.h md5_cpu_avx.h md5_cpu_neon.h
 H_FILES  += deti_coins_vault.h deti_coins_cpu_search.h deti_coins_cpu_special_search.h
 C_FILES   = cuda_driver_api_utilities.h md5_cuda.h
