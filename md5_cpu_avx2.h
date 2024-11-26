@@ -73,7 +73,7 @@ static void test_md5_cpu_avx2(void)
         //
         for (lane = 0u; lane < 8u; lane++)  // for each message number
             for (idx = 0u; idx < 4u; idx++)   // for each hash word
-                if (interleaved_test_hash[4u * idx + lane] != hth[4u * lane + idx])
+                if (interleaved_test_hash[8u * idx + lane] != hth[8u * lane + idx])
                 {
                     fprintf(stderr, "test_md5_cpu_avx2: MD5 hash error for message %u\n", 8u * n + lane);
                     exit(1);

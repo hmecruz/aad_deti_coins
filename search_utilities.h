@@ -8,7 +8,7 @@
 // Define the DETI coin structure
 typedef union {
     u32_t coin_as_ints[13];    // 13 4-byte integers (total size 52 bytes)
-    char coin_as_chars[53];    // 52 bytes = 13 * 4 bytes
+    char coin_as_chars[52];    // 52 bytes = 13 * 4 bytes
 } coin_t;
 
 /**
