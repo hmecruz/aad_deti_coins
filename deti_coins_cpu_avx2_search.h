@@ -31,7 +31,7 @@ static void deti_coins_cpu_avx2_search(u32_t n_random_words)
         initialize_deti_coin(&coins[lane]);
         coins[lane].coin_as_chars[10u] = '0' + (char)lane; 
 
-        //printf("Initialized DETI coin %u: %s\n", lane, coins[lane].coin_as_chars);
+        printf("Initialized DETI coin %u: %s\n", lane, coins[lane].coin_as_chars);
     }
 
     
@@ -54,7 +54,7 @@ static void deti_coins_cpu_avx2_search(u32_t n_random_words)
         for (lane = 0u; lane < 8u; lane++) {
             u32_t hash[4u];
             for (idx = 0u; idx < 4u; idx++) {
-                hash[idx] = interleaved_hash[4u * idx + lane];
+                hash[idx] = interleaved_hash[8u * idx + lane];
             }
 
             // Byte-reverse and check trailing zeros for each coin
@@ -62,10 +62,54 @@ static void deti_coins_cpu_avx2_search(u32_t n_random_words)
 
             n = deti_coin_power(hash);
             if (n >= 32u) {
-                printf("%u\n",n);
+                
+                // Print the interleaved_data 
+                printf("Interleaved Data:\n");
+                for (idx = 0u; idx < 13u; idx++) {
+                    printf("Word %2u: ", idx);
+                    for (u32_t l = 0u; l < 8u; l++) {
+                        printf("Lane %u: 0x%08x ", l, interleaved_data[8u * idx + l]);
+                    }
+                    printf("\n");
+                }
+                
+                printf("MD5 Hashes (Interleaved):\n");
+                for (u32_t i = 0u; i < 8u; i++) {
+                    printf("Lane %u: %08x %08x %08x %08x\n", i,
+                        interleaved_hash[8 * 0 + i],
+                        interleaved_hash[8 * 1 + i],
+                        interleaved_hash[8 * 2 + i],
+                        interleaved_hash[8 * 3 + i]);
+                }  
+
+                printf("Extracted Hash for lane %u: %08x %08x %08x %08x\n",
+                    lane, hash[0], hash[1], hash[2], hash[3]);
+
+                FILE *output_file = fopen("deti_coins_output.txt", "a");
+                if (output_file == NULL) {
+                    fprintf(stderr, "Error: Could not open output file.\n");
+                    exit(1);
+                }
+
+                // Redirect stdout to the file
+                fflush(stdout);           // Ensure no pending output in stdout
+                int original_stdout = dup(fileno(stdout));  // Save the original stdout
+                dup2(fileno(output_file), fileno(stdout));  // Redirect stdout to file
+
+                // Call print_coin()
+                print_coin(&coins[lane]);
+
+                // Restore stdout to its original state
+                fflush(stdout);
+                dup2(original_stdout, fileno(stdout));
+                close(original_stdout);
+
+                fclose(output_file);
+
+                print_coin(&coins[lane]);
                 save_deti_coin(coins[lane].coin_as_ints);  // Save the valid DETI coin
                 n_coins++;
-                printf("Found DETI coin in lane %u: %s\n", lane, coins[lane].coin_as_chars);  // Print the found coin
+                printf("Found DETI coin in lane %u: %.*s", lane, (int)sizeof(coins[lane].coin_as_chars), coins[lane].coin_as_chars);
             }
         }
 
