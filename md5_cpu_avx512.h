@@ -7,6 +7,8 @@
 // test_md5_cpu_avx512() --- test the correctness of md5_cpu_avx512() and measure its execution time
 //
 
+#include <immintrin.h>
+
 #if defined(__GNUC__) && defined(__AVX512__)
 #ifndef MD5_CPU_AVX512
 #define MD5_CPU_AVX512
