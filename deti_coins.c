@@ -240,7 +240,7 @@ int main(int argc,char **argv)
         else {
           n_threads = 8; // Default number of threads
         }
-        printf("searching for %u seconds, with %u threads, using deti_coins_cpu_avx_thread_search()\n",seconds, n_threads);
+        printf("searching for %u seconds, with %u threads, using deti_coins_cpu_avx_openmp_search()\n",seconds, n_threads);
         fflush(stdout);
         deti_coins_cpu_avx_openmp_search(n_random_words, n_threads);
         break;
@@ -266,7 +266,7 @@ int main(int argc,char **argv)
         else {
           n_threads = 8; // Default number of threads
         }
-        printf("searching for %u seconds, with %u threads, using deti_coins_cpu_avx2_thread_search()\n", seconds, n_threads);
+        printf("searching for %u seconds, with %u threads, using deti_coins_cpu_avx2_openmp_search()\n", seconds, n_threads);
         fflush(stdout);
         deti_coins_cpu_avx2_openmp_search(n_random_words, n_threads);
         break;
