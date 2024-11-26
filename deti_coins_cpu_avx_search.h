@@ -2,11 +2,12 @@
 // deti_coins_cpu_avx_search.c --- find DETI coins using AVX and md5_cpu_avx
 //
 
+#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "search_utilities.h"
 #include "md5_cpu_avx.h"
+#include "search_utilities.h"
 
 #ifndef DETI_COINS_CPU_AVX_SEARCH
 #define DETI_COINS_CPU_AVX_SEARCH
@@ -34,9 +35,8 @@ static void deti_coins_cpu_avx_search(u32_t n_random_words)
         //printf("Initialized DETI coin %u: %s\n", lane, coins[lane].coin_as_chars);
     }
 
-    
     // Search for DETI coins
-    for (n_attempts = 0ul; stop_request == 0; n_attempts+=4) {
+    for (n_attempts = 0ul; stop_request == 0; n_attempts+=4u) {
 
         // Insert the var1 and var2 to try different combinations
         for (lane = 0u; lane < 4u; lane++) {
