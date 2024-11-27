@@ -13,7 +13,13 @@
 #define DETI_COINS_CPU_AVX_SEARCH
 
 #define VAR1_IDX_AVX 6
+#if VAR1_IDX_AVX < 5
+    #error "VAR1_IDX_AVX must be 5 or greater"
+#endif
 #define VAR2_IDX_AVX 9
+#if VAR2_IDX_AVX < 5
+    #error "VAR2_IDX_AVX must be 5 or greater"
+#endif
 
 static void deti_coins_cpu_avx_search(u32_t n_random_words)
 {

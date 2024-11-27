@@ -13,7 +13,13 @@
 #define DETI_COINS_CPU_AVX_OPENMP_SEARCH
 
 #define VAR1_IDX_AVX_THREAD 6
+#if VAR1_IDX_AVX_THREAD < 5
+    #error "VAR1_IDX_AVX_THREAD must be 5 or greater"
+#endif
 #define VAR2_IDX_AVX_THREAD 9
+#if VAR2_IDX_AVX_THREAD < 5
+    #error "VAR2_IDX_AVX_THREAD must be 5 or greater"
+#endif
 
 void deti_coins_cpu_avx_openmp_search(u32_t n_random_words, u32_t number_of_threads)
 {
