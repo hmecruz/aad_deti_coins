@@ -14,7 +14,7 @@
 
 // unit --> seconds
 
-#define NUMBER_THREADS 4 // Consider the available resources of the server
+#define NUMBER_THREADS 2 // Consider the available resources of the server
 #if NUMBER_THREADS < 1
     #error "NUMBER_THREADS must be 1 or greater"
 #endif

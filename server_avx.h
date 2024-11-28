@@ -26,10 +26,30 @@ typedef struct {
     search_results_t client_result;
 } client_data_t;
 
+typedef struct {
+    pthread_mutex_t mutex;
+    int active_clients;
+    int total_connections;
+} server_state_t;
+
+server_state_t server_state = {
+    .mutex = PTHREAD_MUTEX_INITIALIZER,
+    .active_clients = 0,
+    .total_connections = 0,
+};
+
 // Global variables to store aggregated results and DETI coins
 static u32_t total_coins = 0;
 static u64_t total_attempts = 0;
 static pthread_mutex_t results_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// Function to print the server state
+void print_server_state() {
+    pthread_mutex_lock(&server_state.mutex);
+    printf("Server State: Active Clients = %d, Total Connections = %d\n",
+           server_state.active_clients, server_state.total_connections);
+    pthread_mutex_unlock(&server_state.mutex);
+}
 
 // Function to generate a random prefix of a given length
 void generate_random_prefix(char *prefix, size_t length) {
@@ -91,6 +111,11 @@ void *handle_client(void *arg) {
     printf("Client disconnected. Received %d coins.\n", coins_received);
     close(client_fd);
     free(client_data);
+
+    pthread_mutex_lock(&server_state.mutex);
+    server_state.active_clients--;
+    pthread_mutex_unlock(&server_state.mutex);
+
     pthread_exit(NULL);
 }
 
@@ -123,32 +148,79 @@ int server(u32_t server_port) {
 
     printf("Server is listening on port %d...\n", server_port);
 
-    pthread_t threads[MAX_CLIENTS];
-    int active_clients = 0;
+    pthread_t threads[MAX_TOTAL_CONNECTIONS];
+    int thread_count = 0;
 
-    while (active_clients < MAX_CLIENTS) {
-        socklen_t addr_len = sizeof(client_addr);
-        int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &addr_len);
-        if (client_fd < 0) {
-            perror("Failed to accept connection");
-            continue;
+    // Server loop with select() to handle non-blocking accept
+    while (1) {
+        pthread_mutex_lock(&server_state.mutex);
+
+        //Server state
+        //printf("Server State: Active Clients = %d, Total Connections = %d\n", 
+        //    server_state.active_clients, server_state.total_connections);
+
+        // Exit condition: No active clients and either connections occurred or limit reached
+        if ((server_state.active_clients == 0 && server_state.total_connections > 0) ||
+            server_state.total_connections >= MAX_TOTAL_CONNECTIONS) {
+            pthread_mutex_unlock(&server_state.mutex);
+            printf("All clients disconnected. Server is shutting down.\n");
+            break;
         }
 
-        client_data_t *client_data = malloc(sizeof(client_data_t));
-        client_data->client_fd = client_fd;
-        client_data->client_addr = client_addr;
+        pthread_mutex_unlock(&server_state.mutex);
 
-        if (pthread_create(&threads[active_clients], NULL, handle_client, client_data) != 0) {
-            perror("Failed to create thread");
-            close(client_fd);
-            free(client_data);
-        } else {
-            active_clients++;
+        // Use select to avoid blocking the server
+        fd_set read_fds;
+        FD_ZERO(&read_fds);
+        FD_SET(server_fd, &read_fds);
+
+        struct timeval timeout = {5, 0}; // Timeout of 1 second
+        int activity = select(server_fd + 1, &read_fds, NULL, NULL, &timeout);
+
+        if (activity < 0) {
+            perror("Select error");
+            break;
+        }
+
+        // If there's an incoming connection, accept it
+        if (FD_ISSET(server_fd, &read_fds)) {
+            socklen_t addr_len = sizeof(client_addr);
+            int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &addr_len);
+            if (client_fd < 0) {
+                perror("Failed to accept connection");
+                continue;
+            }
+
+            pthread_mutex_lock(&server_state.mutex);
+
+            if (server_state.total_connections >= MAX_TOTAL_CONNECTIONS) {
+                printf("Server has reached its maximum connection limit.\n");
+                close(client_fd);
+                pthread_mutex_unlock(&server_state.mutex);
+                continue;
+            }
+
+            // Create a new thread to handle the client
+            client_data_t *client_data = malloc(sizeof(client_data_t));
+            client_data->client_fd = client_fd;
+            client_data->client_addr = client_addr;
+
+            if (pthread_create(&threads[thread_count], NULL, handle_client, client_data) != 0) {
+                perror("Failed to create thread");
+                close(client_fd);
+                free(client_data);
+            } else {
+                server_state.active_clients++;
+                server_state.total_connections++;
+                thread_count++;
+            }
+
+            pthread_mutex_unlock(&server_state.mutex);
         }
     }
 
-    // Wait for all threads to complete
-    for (int i = 0; i < active_clients; i++) {
+    // Wait for all threads to finish
+    for (int i = 0; i < thread_count; i++) {
         pthread_join(threads[i], NULL);
     }
 

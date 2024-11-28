@@ -301,7 +301,7 @@ int main(int argc,char **argv)
         const char *port = argv[3];
         printf("Client connecting to port %s for %u seconds...\n", port, seconds);
         fflush(stdout);
-        client_search(atoi(port), 120); 
+        client_search(atoi(port), seconds); 
         break;
     }
 #endif
