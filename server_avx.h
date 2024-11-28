@@ -9,9 +9,9 @@
 #ifndef SERVER_AVX
 #define SERVER_AVX
 
-#define MAX_CLIENTS 5
-#define MAX_PENDING_CONNECTIONS 5
-#define MAX_TOTAL_CONNECTIONS 10
+#define MAX_CLIENTS 5 // Max number of simultaneously clients
+#define MAX_PENDING_CONNECTIONS 5 // Max number of client connection requests that can be queued
+#define MAX_TOTAL_CONNECTIONS 10 // Max number of connections the server will accept during its lifetime
 #define PREFIX_LENGTH 5 // Do not change this value
 
 typedef struct {
@@ -165,6 +165,19 @@ int server(u32_t server_port) {
             pthread_mutex_unlock(&server_state.mutex);
             printf("All clients disconnected. Server is shutting down.\n");
             break;
+        }
+
+        // Accept a maximum of simultaneously clients
+        if (server_state.active_clients >= MAX_CLIENTS) {
+            pthread_mutex_unlock(&server_state.mutex);
+            //printf("Maximum number of active clients reached.\n");
+
+            // Sleep or use a select timeout to avoid busy waiting
+            struct timeval timeout = {5, 0}; // 5 seconds
+            select(0, NULL, NULL, NULL, &timeout);
+            
+            // Continue to the next iteration to recheck server state
+            continue;
         }
 
         pthread_mutex_unlock(&server_state.mutex);
