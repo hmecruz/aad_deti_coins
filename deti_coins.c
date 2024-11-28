@@ -147,8 +147,6 @@ static void alarm_signal_handler(int dummy)
 
 #include "deti_coins_cpu_search.h"
 #include "deti_coins_cpu_special_search.h"
-#include "server_avx.h"
-#include "client_avx.h"
 
 #include "search_utilities.h"
 #ifdef MD5_CPU_AVX
@@ -168,6 +166,10 @@ static void alarm_signal_handler(int dummy)
 //#if USE_CUDA > 0
 //# include "deti_coins_cuda_search.h"
 //#endif
+
+#include "client_avx.h"
+#include "server_avx.h"
+#define SERVER_PORT "8000"
 
 
 //
@@ -249,7 +251,7 @@ int main(int argc,char **argv)
     }
 #endif
 #ifdef DETI_COINS_CPU_AVX2_SEARCH
-    case '3':
+    case '3': 
         printf("searching for %u seconds using deti_coins_cpu_avx2_search()\n",seconds);
         fflush(stdout);
         deti_coins_cpu_avx2_search(n_random_words);
@@ -281,28 +283,45 @@ int main(int argc,char **argv)
         deti_coins_cpu_avx512_search(n_random_words);
         break;
 #endif
-#ifdef SERVER_AVX && CLIENT_AVX
-    case '6':
-        printf("searching for %u seconds using server client with avx\n",seconds);
+#ifdef SERVER_AVX
+    case '6': {
+        const char *port = (argc > 2) ? argv[2] : SERVER_PORT;
+        printf("Starting server on port %s...\n", port);
         fflush(stdout);
+        server(atoi(port)); 
         break;
+    }
+#endif
+#ifdef CLIENT_AVX
+    case '7': {
+        if (argc < 4) {
+          fprintf(stderr, "main: insufficient arguments for client mode. Expected: -s7 [seconds] [port]\n");
+          exit(1);
+        }
+
+        const char *port = argv[3];
+        printf("Client connecting to port %s for %u seconds...\n", port, seconds);
+        fflush(stdout);
+        client_search(atoi(port), seconds); 
+        break;
+    }
 #endif
 #ifdef DETI_COINS_CPU_NEON_SEARCH
-    case '7':
+    case '8':
         printf("searching for %u seconds using deti_coins_cpu_neon_search()\n",seconds);
         fflush(stdout);
         deti_coins_cpu_neon_search(n_random_words);
         break;
 #endif
 #ifdef DETI_COINS_CUDA_SEARCH
-    case '8':
+    case '9':
         printf("searching for %u seconds using deti_coins_cuda_search()\n",seconds);
         fflush(stdout);
         deti_coins_cuda_search(n_random_words);
         break;
 #endif
 #ifdef DETI_COINS_CPU_SPECIAL_SEARCH
-    case '9': {
+    case 10: {
         const char *special_text; // Declare the variable inside the block
 
         // Check if the user passed a special text argument
@@ -340,17 +359,20 @@ int main(int argc,char **argv)
 #ifdef DETI_COINS_CPU_AVX512_SEARCH
   fprintf(stderr, "       %s -s5 [seconds] [n_random_words]             # search for DETI coins using md5_cpu_avx512()\n", argv[0]);
 #endif
-#ifdef SERVER_AVX && CLIENT_AVX
-  fprintf(stderr, "       %s -s6 [seconds] [port]                       # search for DETI coins using client server with avx\n", argv[0]);
+#ifdef SERVER_AVX 
+  fprintf(stderr, "       %s -s6 [port] [ignored]                       # search for DETI coins using server\n", argv[0]);
+#endif
+#ifdef CLIENT_AVX 
+  fprintf(stderr, "       %s -s7 [seconds] [port]                       # search for DETI coins using client with avx\n", argv[0]);
 #endif
 #ifdef DETI_COINS_CPU_NEON_SEARCH
-  fprintf(stderr, "       %s -s7 [seconds] [n_random_words]             # search for DETI coins using md5_cpu_neon()\n", argv[0]);
+  fprintf(stderr, "       %s -s8 [seconds] [n_random_words]             # search for DETI coins using md5_cpu_neon()\n", argv[0]);
 #endif
 #ifdef DETI_COINS_CUDA_SEARCH
-  fprintf(stderr, "       %s -s8 [seconds] [n_random_words]             # search for DETI coins using CUDA\n", argv[0]);
+  fprintf(stderr, "       %s -s9 [seconds] [n_random_words]             # search for DETI coins using CUDA\n", argv[0]);
 #endif
 #ifdef DETI_COINS_CPU_SPECIAL_SEARCH
-  fprintf(stderr, "       %s -s9 [seconds] [special_text]               # special search for DETI coins using md5_cpu()\n", argv[0]);
+  fprintf(stderr, "       %s -s10 [seconds] [special_text]               # special search for DETI coins using md5_cpu()\n", argv[0]);
 #endif
   fprintf(stderr, "                                                     # seconds is the amount of time spent in the search\n");
   fprintf(stderr, "                                                     # n_random_words is the number of 4-byte words to use\n");

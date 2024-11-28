@@ -2,88 +2,143 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <pthread.h>
-
+#include <unistd.h>
+#include <time.h>
+//#include "deti_coins_vault.h"
 
 #ifndef SERVER_AVX
 #define SERVER_AVX
 
-#define SERVER_PORT 12345
-#define MAX_SIMULTANEOUS_CLIENTS 8
-#define MAX_TOTAL_CLIENTS 100
+#define MAX_CLIENTS 10
+#define PREFIX_LENGTH 5 // Do not change this value
+#define MAX_DETI_COINS 500 
 
-int current_client_id = 0;
-pthread_mutex_t client_id_lock = PTHREAD_MUTEX_INITIALIZER;
+typedef struct {
+    u32_t total_n_coins;
+    u64_t total_n_attempts;
+} search_results_t;
 
-void *handle_client(void *arg) {
-    int client_fd = *(int *)arg;
-    free(arg);
+// Global variables to store aggregated results and DETI coins
+static u32_t total_coins = 0;
+static u64_t total_attempts = 0;
+static u32_t deti_coin_count = 0;
 
-    pthread_mutex_lock(&client_id_lock);
-    if (current_client_id >= MAX_TOTAL_CLIENTS) {
-        printf("Maximum clients reached, rejecting connection.\n");
-        close(client_fd);
-        pthread_mutex_unlock(&client_id_lock);
-        return NULL;
+// Function to generate a random prefix of a given length
+void generate_random_prefix(char *prefix, size_t length) {
+    const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    for (size_t i = 0; i < length; i++) {
+        prefix[i] = charset[rand() % (sizeof(charset) - 1)];
     }
-    int client_id = current_client_id++;
-    pthread_mutex_unlock(&client_id_lock);
-
-    // Assign mandatory prefix
-    char prefix[20];
-    snprintf(prefix, sizeof(prefix), "DETI coin %d", client_id);
-
-    // Send the prefix to the client
-    send(client_fd, prefix, strlen(prefix) + 1, 0);
-    printf("Assigned prefix '%s' to client ID %d\n", prefix, client_id);
-
-    // Receive results from the client (if applicable)
-    char buffer[256];
-    ssize_t bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-    if (bytes_received > 0) {
-        buffer[bytes_received] = '\0';
-        printf("Client %d: %s\n", client_id, buffer);
-    }
-
-    // Close connection
-    close(client_fd);
-    return NULL;
+    prefix[length] = '\0'; // Null-terminate the string
 }
 
-int main() {
-    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+void handle_client(int client_sock) {
+    char prefix[PREFIX_LENGTH + 1]; // +1 for null terminator
+    generate_random_prefix(prefix, PREFIX_LENGTH);
+
+    // Send the prefix to the client
+    if (send(client_sock, prefix, PREFIX_LENGTH + 1, 0) < 0) {
+        perror("Failed to send prefix to client");
+        close(client_sock);
+        return;
+    }
+    printf("Sent prefix '%s' to client\n", prefix);
+
+    // Receive coins and results from the client
+    search_results_t result = {0};
+    while (1) {
+        u32_t coin_buffer[13]; 
+
+        ssize_t bytes_received = recv(client_sock, coin_buffer, sizeof(coin_buffer), 0);
+        if (bytes_received <= 0) {
+            // No more coins or client disconnected
+            break;
+        }
+
+        // Log the received coin
+        save_deti_coin(coin_buffer);  // Save the valid DETI coin
+    }
+
+    // Receive final result summary from the client
+    ssize_t bytes_received = recv(client_sock, &result, sizeof(result), 0);
+    if (bytes_received > 0) {
+        printf("Client summary:\n");
+        printf(" - Total coins found: %u\n", result.total_n_coins);
+        printf(" - Total attempts: %lu\n", result.total_n_attempts);
+
+        // Aggregate results
+        total_coins += result.total_n_coins;
+        total_attempts += result.total_n_attempts;
+    } else {
+        perror("Failed to receive final result from client");
+    }
+
+
+    // Close the client socket
+    close(client_sock);
+}
+
+void server(u32_t server_port) {
+    srand(time(NULL)); // Seed the random number generator
+
+    int server_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_sock < 0) {
+        perror("Failed to create socket");
+        exit(EXIT_FAILURE);
+    }
+
     struct sockaddr_in server_addr = {
         .sin_family = AF_INET,
-        .sin_port = htons(SERVER_PORT),
+        .sin_port = htons(server_port),
         .sin_addr.s_addr = INADDR_ANY,
     };
 
-    bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-    listen(server_fd, MAX_SIMULTANEOUS_CLIENTS);
+    // Bind the server socket to the specified port
+    if (bind(server_sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        perror("Failed to bind socket");
+        close(server_sock);
+        exit(EXIT_FAILURE);
+    }
 
-    printf("Server listening on port %d\n", SERVER_PORT);
+    // Listen for incoming connections
+    if (listen(server_sock, MAX_CLIENTS) < 0) {
+        perror("Failed to listen on socket");
+        close(server_sock);
+        exit(EXIT_FAILURE);
+    }
 
-    while (current_client_id < MAX_TOTAL_CLIENTS) {
+    printf("Server listening on port %d\n", server_port);
+
+    while (1) {
         struct sockaddr_in client_addr;
-        socklen_t addr_len = sizeof(client_addr);
-        int *client_fd = malloc(sizeof(int));
-        *client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &addr_len);
-        if (*client_fd < 0) {
+        socklen_t client_len = sizeof(client_addr);
+        int client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &client_len);
+        if (client_sock < 0) {
             perror("Failed to accept client connection");
-            free(client_fd);
             continue;
         }
 
-        printf("Client connected\n");
+        printf("Accepted connection from client\n");
 
-        pthread_t client_thread;
-        pthread_create(&client_thread, NULL, handle_client, client_fd);
-        pthread_detach(client_thread);  // Detach thread for independent handling
+        // Handle the client in a separate function
+        handle_client(client_sock);
+
+        // Check if all clients are processed (example mechanism)
+        if (deti_coin_count >= MAX_DETI_COINS) {
+            printf("Maximum coin storage reached. Stopping server.\n");
+            break;
     }
 
-    close(server_fd);
-    printf("Server shutting down after serving %d clients.\n", MAX_TOTAL_CLIENTS);
-    return 0;
+    STORE_DETI_COINS();
+
+    printf("deti_coins_cpu_avx_search: Found %u DETI coin%s in %lu attempt%s (expected %.2f coins)\n",
+        total_coins, (total_coins == 1) ? "" : "s", total_attempts,
+        (total_attempts == 1) ? "" : "s",
+        (double)total_attempts / (double)(1ul << 32));
+
+    // Close the server socket (never reached in this example)
+    close(server_sock);
+    }
 }
 
 #endif

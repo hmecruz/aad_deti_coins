@@ -13,10 +13,6 @@
 #define SERVER_IP "127.0.0.1"
 
 // unit --> seconds
-#define SEARCH_TIME 300
-#if SEARCH_TIME < 120
-    #error "SEARCH_TIME must be 120 or greater"
-#endif
 
 #define NUMBER_THREADS 4 
 #if NUMBER_THREADS < 1
@@ -37,7 +33,7 @@ typedef struct {
     u64_t total_n_attempts;
 } search_result_t;
 
-void client_search(u32_t server_port) {
+void client_search(u32_t server_port, u32_t search_time) {
     int sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_fd < 0) {
         perror("Failed to create socket");
@@ -94,7 +90,7 @@ void client_search(u32_t server_port) {
         }
 
         // Search for DETI coins
-        for (n_attempts = 0ul; time(NULL) - start_time < SEARCH_TIME; n_attempts+=4u) {
+        for (n_attempts = 0ul; time(NULL) - start_time < search_time; n_attempts+=4u) {
             
             // Insert the var1 and var2 to try different combinations
             for (lane = 0u; lane < 4u; lane++) {
@@ -122,7 +118,7 @@ void client_search(u32_t server_port) {
                 n = deti_coin_power(hash);
                 if (n >= 32u) {
                     // send the coin to the server
-                    if (send(sock_fd, coins[lane].coin_as_chars, sizeof(coins[lane].coin_as_chars), 0) < 0) {
+                    if (send(sock_fd, coins[lane].coin_as_ints, sizeof(coins[lane].coin_as_chars), 0) < 0) {
                         perror("Failed to send coin to server");
                     }
                     n_coins++;
