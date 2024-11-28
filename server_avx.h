@@ -1,27 +1,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <arpa/inet.h>
 #include <time.h>
-//#include "deti_coins_vault.h"
 
 #ifndef SERVER_AVX
 #define SERVER_AVX
 
-#define MAX_CLIENTS 10
+#define MAX_CLIENTS 5
+#define MAX_PENDING_CONNECTIONS 5
+#define MAX_TOTAL_CONNECTIONS 10
 #define PREFIX_LENGTH 5 // Do not change this value
-#define MAX_DETI_COINS 500 
 
 typedef struct {
     u32_t total_n_coins;
     u64_t total_n_attempts;
 } search_results_t;
 
+// Struct for handling client threads
+typedef struct {
+    int client_fd;
+    struct sockaddr_in client_addr;
+    search_results_t client_result;
+} client_data_t;
+
 // Global variables to store aggregated results and DETI coins
 static u32_t total_coins = 0;
 static u64_t total_attempts = 0;
-static u32_t deti_coin_count = 0;
+static pthread_mutex_t results_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // Function to generate a random prefix of a given length
 void generate_random_prefix(char *prefix, size_t length) {
@@ -32,113 +40,128 @@ void generate_random_prefix(char *prefix, size_t length) {
     prefix[length] = '\0'; // Null-terminate the string
 }
 
-void handle_client(int client_sock) {
-    char prefix[PREFIX_LENGTH + 1]; // +1 for null terminator
-    generate_random_prefix(prefix, PREFIX_LENGTH);
+// Function to handle communication with a single client
+void *handle_client(void *arg) {
+    client_data_t *client_data = (client_data_t *)arg;
+    int client_fd = client_data->client_fd;
+    char prefix[PREFIX_LENGTH + 1] = {0};
 
-    // Send the prefix to the client
-    if (send(client_sock, prefix, PREFIX_LENGTH + 1, 0) < 0) {
-        perror("Failed to send prefix to client");
-        close(client_sock);
-        return;
+    // Generate and send a random prefix
+    generate_random_prefix(prefix, PREFIX_LENGTH);
+    if (send(client_fd, prefix, PREFIX_LENGTH, 0) < 0) {
+        perror("Failed to send prefix");
+        close(client_fd);
+        free(client_data);
+        pthread_exit(NULL);
     }
     printf("Sent prefix '%s' to client\n", prefix);
 
-    // Receive coins and results from the client
-    search_results_t result = {0};
+    char buffer[1024] = {0};
+    int coins_received = 0;
     while (1) {
-        u32_t coin_buffer[13]; 
-
-        ssize_t bytes_received = recv(client_sock, coin_buffer, sizeof(coin_buffer), 0);
+        ssize_t bytes_received = recv(client_fd, buffer, sizeof(buffer), 0);
         if (bytes_received <= 0) {
-            // No more coins or client disconnected
-            break;
+            break; // Client disconnected
         }
 
-        // Log the received coin
-        save_deti_coin(coin_buffer);  // Save the valid DETI coin
+        // Process client messages
+        if (bytes_received == 1 && buffer[0] == 0) { 
+            // End signal
+            printf("End Signal\n");
+            break;
+        } else if (bytes_received == sizeof(search_results_t) + 1) { 
+            // Result signal + end signal
+            printf("Saved the results\n");
+            search_results_t *result = (search_results_t *)buffer;
+            pthread_mutex_lock(&results_mutex);
+            total_coins += result->total_n_coins;
+            total_attempts += result->total_n_attempts;
+            pthread_mutex_unlock(&results_mutex);
+        } else if (bytes_received == 52) { 
+            // DETI coin received
+            save_deti_coin((u32_t *)buffer);
+            coins_received++;
+            printf("Saved Deti coin\n");
+        }
+        else {
+            fprintf(stderr, "Received unexpected message of size %zd bytes.\n", bytes_received);
+        }
     }
 
-    // Receive final result summary from the client
-    ssize_t bytes_received = recv(client_sock, &result, sizeof(result), 0);
-    if (bytes_received > 0) {
-        printf("Client summary:\n");
-        printf(" - Total coins found: %u\n", result.total_n_coins);
-        printf(" - Total attempts: %lu\n", result.total_n_attempts);
-
-        // Aggregate results
-        total_coins += result.total_n_coins;
-        total_attempts += result.total_n_attempts;
-    } else {
-        perror("Failed to receive final result from client");
-    }
-
-
-    // Close the client socket
-    close(client_sock);
+    printf("Client disconnected. Received %d coins.\n", coins_received);
+    close(client_fd);
+    free(client_data);
+    pthread_exit(NULL);
 }
 
-void server(u32_t server_port) {
-    srand(time(NULL)); // Seed the random number generator
 
-    int server_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_sock < 0) {
-        perror("Failed to create socket");
+int server(u32_t server_port) {
+    int server_fd;
+    struct sockaddr_in server_addr, client_addr;
+
+    // Create and set up the server socket
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
 
-    struct sockaddr_in server_addr = {
-        .sin_family = AF_INET,
-        .sin_port = htons(server_port),
-        .sin_addr.s_addr = INADDR_ANY,
-    };
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(server_port);
 
-    // Bind the server socket to the specified port
-    if (bind(server_sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        perror("Failed to bind socket");
-        close(server_sock);
+    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        perror("Socket binding failed");
+        close(server_fd);
         exit(EXIT_FAILURE);
     }
 
-    // Listen for incoming connections
-    if (listen(server_sock, MAX_CLIENTS) < 0) {
-        perror("Failed to listen on socket");
-        close(server_sock);
+    if (listen(server_fd, MAX_PENDING_CONNECTIONS) < 0) {
+        perror("Listening failed");
+        close(server_fd);
         exit(EXIT_FAILURE);
     }
 
-    printf("Server listening on port %d\n", server_port);
+    printf("Server is listening on port %d...\n", server_port);
 
-    while (1) {
-        struct sockaddr_in client_addr;
-        socklen_t client_len = sizeof(client_addr);
-        int client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &client_len);
-        if (client_sock < 0) {
-            perror("Failed to accept client connection");
+    pthread_t threads[MAX_CLIENTS];
+    int active_clients = 0;
+
+    while (active_clients < MAX_CLIENTS) {
+        socklen_t addr_len = sizeof(client_addr);
+        int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &addr_len);
+        if (client_fd < 0) {
+            perror("Failed to accept connection");
             continue;
         }
 
-        printf("Accepted connection from client\n");
+        client_data_t *client_data = malloc(sizeof(client_data_t));
+        client_data->client_fd = client_fd;
+        client_data->client_addr = client_addr;
 
-        // Handle the client in a separate function
-        handle_client(client_sock);
+        if (pthread_create(&threads[active_clients], NULL, handle_client, client_data) != 0) {
+            perror("Failed to create thread");
+            close(client_fd);
+            free(client_data);
+        } else {
+            active_clients++;
+        }
+    }
 
-        // Check if all clients are processed (example mechanism)
-        if (deti_coin_count >= MAX_DETI_COINS) {
-            printf("Maximum coin storage reached. Stopping server.\n");
-            break;
+    // Wait for all threads to complete
+    for (int i = 0; i < active_clients; i++) {
+        pthread_join(threads[i], NULL);
     }
 
     STORE_DETI_COINS();
 
+    // Print final aggregated results
     printf("deti_coins_cpu_avx_search: Found %u DETI coin%s in %lu attempt%s (expected %.2f coins)\n",
-        total_coins, (total_coins == 1) ? "" : "s", total_attempts,
-        (total_attempts == 1) ? "" : "s",
-        (double)total_attempts / (double)(1ul << 32));
+           total_coins, (total_coins == 1) ? "" : "s",
+           total_attempts, (total_attempts == 1) ? "" : "s",
+           (double)total_attempts / (double)(1ul << 32));
 
-    // Close the server socket (never reached in this example)
-    close(server_sock);
-    }
+    close(server_fd);
+    return 0;
 }
 
 #endif

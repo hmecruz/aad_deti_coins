@@ -171,7 +171,6 @@ static void alarm_signal_handler(int dummy)
 #include "server_avx.h"
 #define SERVER_PORT "8000"
 
-
 //
 // main program
 //
@@ -302,7 +301,7 @@ int main(int argc,char **argv)
         const char *port = argv[3];
         printf("Client connecting to port %s for %u seconds...\n", port, seconds);
         fflush(stdout);
-        client_search(atoi(port), seconds); 
+        client_search(atoi(port), 120); 
         break;
     }
 #endif

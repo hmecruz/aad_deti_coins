@@ -14,7 +14,7 @@
 
 // unit --> seconds
 
-#define NUMBER_THREADS 4 
+#define NUMBER_THREADS 4 // Consider the available resources of the server
 #if NUMBER_THREADS < 1
     #error "NUMBER_THREADS must be 1 or greater"
 #endif
@@ -117,12 +117,13 @@ void client_search(u32_t server_port, u32_t search_time) {
                 // Determine DETI coin power
                 n = deti_coin_power(hash);
                 if (n >= 32u) {
-                    // send the coin to the server
-                    if (send(sock_fd, coins[lane].coin_as_ints, sizeof(coins[lane].coin_as_chars), 0) < 0) {
-                        perror("Failed to send coin to server");
+                    // Send the coin to the server
+                    if (send(sock_fd, coins[lane].coin_as_ints, sizeof(coins[lane].coin_as_ints), 0) < 0) {
+                        perror("Failed to send coin");
                     }
                     n_coins++;
-                    printf("Client %s: Found DETI coin: %s\n", prefix, coins[lane].coin_as_chars);
+                    printf("Thread %d: Found DETI coin in lane %u: %s\n",
+                        omp_get_thread_num(), lane, coins[lane].coin_as_chars);
                 }
             }
 
@@ -144,12 +145,27 @@ void client_search(u32_t server_port, u32_t search_time) {
         .total_n_attempts = total_n_attempts,
     };
 
-    if (send(sock_fd, &result, sizeof(result), 0) < 0) {
-        perror("Failed to send result data to server");
+    
+    // Combine result and end signal into a single buffer
+    char message_buffer[sizeof(search_result_t) + 1];
+    memcpy(message_buffer, &result, sizeof(search_result_t));
+    message_buffer[sizeof(search_result_t)] = 0; // End signal
+
+    // Send the combined buffer
+    ssize_t bytes_sent = send(sock_fd, message_buffer, sizeof(message_buffer), 0);
+    if (bytes_sent < 0) {
+        perror("Failed to send result and end signal");
+    } else {
+        printf("Sent %zd bytes\n", bytes_sent);
     }
+    
+    printf("deti_coins_cpu_avx_openmp_search: Found %u DETI coin%s in %lu attempt%s (expected %.2f coins)\n",
+        total_n_coins, (total_n_coins == 1) ? "" : "s",
+        total_n_attempts, (total_n_attempts == 1) ? "" : "s",
+        (double)total_n_attempts / (double)(1ul << 32));
 
     // Close connection
-    close(sock_fd);
+    shutdown(sock_fd, SHUT_WR);
 }
 
 #endif
