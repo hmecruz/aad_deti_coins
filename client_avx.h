@@ -159,7 +159,7 @@ void client_search(u32_t server_port, u32_t search_time) {
         printf("Sent %zd bytes\n", bytes_sent);
     }
     
-    printf("deti_coins_cpu_avx_openmp_search: Found %u DETI coin%s in %lu attempt%s (expected %.2f coins)\n",
+    printf("Client - deti_coins_cpu_avx_openmp_search: Found %u DETI coin%s in %lu attempt%s (expected %.2f coins)\n",
         total_n_coins, (total_n_coins == 1) ? "" : "s",
         total_n_attempts, (total_n_attempts == 1) ? "" : "s",
         (double)total_n_attempts / (double)(1ul << 32));

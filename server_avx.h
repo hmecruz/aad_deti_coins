@@ -227,7 +227,7 @@ int server(u32_t server_port) {
     STORE_DETI_COINS();
 
     // Print final aggregated results
-    printf("deti_coins_cpu_avx_search: Found %u DETI coin%s in %lu attempt%s (expected %.2f coins)\n",
+    printf("Server - deti_coins_cpu_avx_search: Found %u DETI coin%s in %lu attempt%s (expected %.2f coins)\n",
            total_coins, (total_coins == 1) ? "" : "s",
            total_attempts, (total_attempts == 1) ? "" : "s",
            (double)total_attempts / (double)(1ul << 32));
