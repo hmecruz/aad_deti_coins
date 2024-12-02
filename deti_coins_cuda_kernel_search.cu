@@ -18,8 +18,8 @@ typedef unsigned int u32_t;
 // warp thread number: n & 31
 //
 
-#define VAR1_IDX_AVX 10 // between 9 and 11
-#define VAR2_IDX_AVX 11 // between 9 and 11
+#define VAR1_IDX_CUDA 10 // between 9 and 11
+#define VAR2_IDX_CUDA 11 // between 9 and 11
 
 // CUDA-compatible initialize_deti_coin function
 __device__ __host__ inline void initialize_deti_coin_cuda(coin_t *coin) {
@@ -43,8 +43,8 @@ extern "C" __global__ __launch_bounds__(128, 1) void deti_coins_cuda_kernel_sear
     n = (u32_t)threadIdx.x + (u32_t)blockDim.x * (u32_t)blockIdx.x;
 
     initialize_deti_coin_cuda(&coin);
-    coin.coin_as_ints[VAR1_IDX_AVX] = var1;
-    coin.coin_as_ints[VAR2_IDX_AVX] = var2;
+    coin.coin_as_ints[VAR1_IDX_CUDA] = var1;
+    coin.coin_as_ints[VAR2_IDX_CUDA] = var2;
 
     coin.coin_as_ints[4] += (n % 64) << 0; n/= 64;
     coin.coin_as_ints[4] += (n % 64) << 8; n/= 64;
