@@ -13,7 +13,7 @@
 
 static void deti_coins_cpu_special_search(const char *special_text)
 {
-    u32_t n, idx, hash[4u];
+    u32_t idx, hash[4u];
     u64_t n_attempts, n_coins;
     coin_t coin;
     
@@ -36,14 +36,7 @@ static void deti_coins_cpu_special_search(const char *special_text)
         // Compute MD5 hash using the coin as an array of integers
         md5_cpu(coin.coin_as_ints, hash);
 
-        // Byte-reverse each word (for correct printing of the MD5 message digest)
-        hash_byte_reverse(hash);
-
-        // Count the number of trailing zeros of the MD5 hash
-        n = deti_coin_power(hash);
-
-        // If the number of trailing zeros is >= 32, we have a DETI coin
-        if (n >= 32u) {
+        if (hash[3] == 0){
             save_deti_coin(coin.coin_as_ints);  // Save the coin as integers
             n_coins++;
 

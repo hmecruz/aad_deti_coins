@@ -31,7 +31,7 @@ void deti_coins_cpu_avx_openmp_search(u32_t n_random_words, u32_t number_of_thre
     {
         u32_t n_coins = 0;        // Coins found by this thread
         u64_t n_attempts = 0;     // Attempts made by this thread
-        u32_t n, lane, idx;   
+        u32_t lane, idx;   
         coin_t coins[4]; 
         u32_t interleaved_data[13u * 4u] __attribute__((aligned(16)));
         u32_t interleaved_hash[ 4u * 4u] __attribute__((aligned(16)));
@@ -68,12 +68,7 @@ void deti_coins_cpu_avx_openmp_search(u32_t n_random_words, u32_t number_of_thre
                     hash[idx] = interleaved_hash[4u * idx + lane];
                 }
 
-                // Byte-reverse and check trailing zeros for each coin
-                hash_byte_reverse(hash);
-
-                // Determine DETI coin power
-                n = deti_coin_power(hash);
-                if (n >= 32u) {
+                if (hash[3] == 0x00000000){
                     save_deti_coin(coins[lane].coin_as_ints); // Save valid coin
                     n_coins++;
                     printf("Thread %d: Found DETI coin in lane %u: %s\n",

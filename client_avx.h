@@ -72,7 +72,7 @@ void client_search(u32_t server_port, u32_t search_time) {
     {
         u32_t n_coins = 0;        // Coins found by this thread
         u64_t n_attempts = 0;     // Attempts made by this thread
-        u32_t n, lane, idx;   
+        u32_t lane, idx;   
         coin_t coins[4]; 
         u32_t interleaved_data[13u * 4u] __attribute__((aligned(16)));
         u32_t interleaved_hash[ 4u * 4u] __attribute__((aligned(16)));
@@ -111,12 +111,7 @@ void client_search(u32_t server_port, u32_t search_time) {
                     hash[idx] = interleaved_hash[4u * idx + lane];
                 }
 
-                // Byte-reverse and check trailing zeros for each coin
-                hash_byte_reverse(hash);
-
-                // Determine DETI coin power
-                n = deti_coin_power(hash);
-                if (n >= 32u) {
+                if (hash[3] == 0x00000000){
                     // Send the coin to the server
                     if (send(sock_fd, coins[lane].coin_as_ints, sizeof(coins[lane].coin_as_ints), 0) < 0) {
                         perror("Failed to send coin");

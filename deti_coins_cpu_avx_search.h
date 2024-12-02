@@ -23,7 +23,7 @@
 
 static void deti_coins_cpu_avx_search(u32_t n_random_words)
 {
-    u32_t n, lane, idx, n_coins = 0;
+    u32_t lane, idx, n_coins = 0;
     u64_t n_attempts;
     coin_t coins[4]; 
     u32_t interleaved_data[13u * 4u] __attribute__((aligned(16)));
@@ -63,11 +63,7 @@ static void deti_coins_cpu_avx_search(u32_t n_random_words)
                 hash[idx] = interleaved_hash[4u * idx + lane];
             }
 
-            // Byte-reverse and check trailing zeros for each coin
-            hash_byte_reverse(hash);
-
-            n = deti_coin_power(hash);
-            if (n >= 32u) {
+            if (hash[3] == 0x00000000){
                 save_deti_coin(coins[lane].coin_as_ints);  // Save the valid DETI coin
                 n_coins++;
                 printf("Found DETI coin in lane %u: %s\n", lane, coins[lane].coin_as_chars);  // Print the found coin

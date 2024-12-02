@@ -30,7 +30,7 @@ H_FILES   = cpu_utilities.h search_utilities.h
 H_FILES  += md5.h md5_test_data.h md5_cpu.h md5_cpu_avx.h md5_cpu_avx2.h md5_cpu_avx512.h md5_cpu_neon.h
 H_FILES  += deti_coins_vault.h deti_coins_cpu_search.h deti_coins_cpu_special_search.h deti_coins_cpu_avx_search.h deti_coins_cpu_avx_openmp_search.h deti_coins_cpu_avx2_search.h deti_coins_cpu_avx2_openmp_search.h deti_coins_cpu_avx512_search.h
 H_FILES  += server_avx.h client_avx.h
-C_FILES   = cuda_driver_api_utilities.h md5_cuda.h
+C_FILES   = cuda_driver_api_utilities.h md5_cuda.h deti_coins_cuda_search.h
 
 
 #

@@ -20,7 +20,7 @@
 #endif
 
 #ifndef USE_CUDA
-# define USE_CUDA 0
+# define USE_CUDA 1
 #endif
 
 #ifndef __AVX__
@@ -149,6 +149,7 @@ static void alarm_signal_handler(int dummy)
 #include "deti_coins_cpu_special_search.h"
 
 #include "search_utilities.h"
+
 #ifdef MD5_CPU_AVX
 #include "deti_coins_cpu_avx_search.h"
 #include "deti_coins_cpu_avx_openmp_search.h"
@@ -163,9 +164,9 @@ static void alarm_signal_handler(int dummy)
 //#ifdef MD5_CPU_NEON
 //# include "deti_coins_cpu_neon_search.h"
 //#endif
-//#if USE_CUDA > 0
-//# include "deti_coins_cuda_search.h"
-//#endif
+#if USE_CUDA > 0
+# include "deti_coins_cuda_search.h"
+#endif
 
 #include "client_avx.h"
 #include "server_avx.h"
@@ -320,7 +321,7 @@ int main(int argc,char **argv)
         break;
 #endif
 #ifdef DETI_COINS_CPU_SPECIAL_SEARCH
-    case 10: {
+    case 'a': {
         const char *special_text; // Declare the variable inside the block
 
         // Check if the user passed a special text argument
