@@ -19,8 +19,8 @@ static void deti_coins_cuda_search(u32_t n_random_words)
     void *cu_params[4];
 
     // Variables for combination testing
-    u32_t var1 = 0x20202020u; // Initial value for var1 (0x20 ASCII code for space)
-    u32_t var2 = 0x20202020u; // Initial value for var2 (0x20 ASCII code for space)
+    var1 = 0x20202020u; // Initial value for var1 (0x20 ASCII code for space)
+    var2 = 0x20202020u; // Initial value for var2 (0x20 ASCII code for space)
 
     initialize_cuda(0, "deti_coins_cuda_kernel_search.cubin", "deti_coins_cuda_kernel_search", 1024u, 0u);
     max_idx = 1u; // Keep track of the maximum index in the data buffer

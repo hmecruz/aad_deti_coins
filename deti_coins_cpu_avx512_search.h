@@ -56,7 +56,7 @@ static void deti_coins_cpu_avx512_search(u32_t n_random_words)
                 hash[idx] = interleaved_hash[16u * idx + lane];
             }
 
-            if (hash[3] == 0x00000000){
+            if (hash[3] == 0){
                 save_deti_coin(coins[lane].coin_as_ints);  // Save the valid DETI coin
                 n_coins++;
                 printf("Found DETI coin in lane %u: %.*s", lane, (int)sizeof(coins[lane].coin_as_chars), coins[lane].coin_as_chars);

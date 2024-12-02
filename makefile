@@ -61,7 +61,7 @@ deti_coins_apple:	$(SRC) $(H_FILES)
 # compile for Intel/AMD processors with CUDA
 #
 deti_coins_intel_cuda:	$(SRC) $(H_FILES) $(C_FILES) md5_cuda_kernel.cubin
-	cc -Wall -O2 -mavx2 -DUSE_CUDA=1 -I$(CUDA_DIR)/include $(SRC) -o deti_coins_intel_cuda -L$(CUDA_DIR)/lib64 -lcuda
+	cc -Wall -O2 -mavx2 -fopenmp -DUSE_CUDA=1 -I$(CUDA_DIR)/include $(SRC) -o deti_coins_intel_cuda -L$(CUDA_DIR)/lib64 -lcuda
 
 md5_cuda_kernel.cubin:			md5.h md5_cuda_kernel.cu
 	nvcc -arch=$(CUDA_ARCH) --compiler-options -O2,-Wall -I$(CUDA_DIR)/include --cubin md5_cuda_kernel.cu -o md5_cuda_kernel.cubin

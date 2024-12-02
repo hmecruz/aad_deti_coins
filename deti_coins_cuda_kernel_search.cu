@@ -21,6 +21,20 @@ typedef unsigned int u32_t;
 #define VAR1_IDX_AVX 10 // between 9 and 11
 #define VAR2_IDX_AVX 11 // between 9 and 11
 
+// CUDA-compatible initialize_deti_coin function
+__device__ __host__ inline void initialize_deti_coin_cuda(coin_t *coin) {
+    for (int i = 0; i < sizeof(coin->coin_as_chars); i++) {
+        coin->coin_as_chars[i] = 0;
+    }
+    const char *prefix = "DETI coin ";
+    for (int i = 0; i < 10; i++) {
+        coin->coin_as_chars[i] = prefix[i];
+    }
+    for (int i = 10; i < 51; i++) {
+        coin->coin_as_chars[i] = ' ';
+    }
+    coin->coin_as_chars[51] = '\n';
+}
 
 // DETI Coin Search CUDA Kernel
 extern "C" __global__ __launch_bounds__(128, 1) void deti_coins_cuda_kernel_search(u32_t *storage_area, u32_t var1, u32_t var2){
@@ -28,7 +42,7 @@ extern "C" __global__ __launch_bounds__(128, 1) void deti_coins_cuda_kernel_sear
     u32_t n, a, b, c, d, state[4], x[16], hash[4];
     n = (u32_t)threadIdx.x + (u32_t)blockDim.x * (u32_t)blockIdx.x;
 
-    initialize_deti_coin(&coin);
+    initialize_deti_coin_cuda(&coin);
     coin.coin_as_ints[VAR1_IDX_AVX] = var1;
     coin.coin_as_ints[VAR2_IDX_AVX] = var2;
 
