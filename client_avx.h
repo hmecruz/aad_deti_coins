@@ -117,8 +117,8 @@ void client_search(u32_t server_port, u32_t search_time) {
                         perror("Failed to send coin");
                     }
                     n_coins++;
-                    printf("Thread %d: Found DETI coin in lane %u: %s\n",
-                        omp_get_thread_num(), lane, coins[lane].coin_as_chars);
+                    //printf("Thread %d: Found DETI coin in lane %u: %s\n",
+                    //    omp_get_thread_num(), lane, coins[lane].coin_as_chars);
                 }
             }
 

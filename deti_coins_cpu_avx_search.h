@@ -66,7 +66,7 @@ static void deti_coins_cpu_avx_search(u32_t n_random_words)
             if (hash[3] == 0){
                 save_deti_coin(coins[lane].coin_as_ints);  // Save the valid DETI coin
                 n_coins++;
-                printf("Found DETI coin in lane %u: %s\n", lane, coins[lane].coin_as_chars);  // Print the found coin
+                //printf("Found DETI coin in lane %u: %s\n", lane, coins[lane].coin_as_chars);  // Print the found coin
             }
         }
 

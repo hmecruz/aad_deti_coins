@@ -70,8 +70,8 @@ void deti_coins_cpu_avx2_openmp_search(u32_t n_random_words, u32_t number_of_thr
                 if (hash[3] == 0){
                     save_deti_coin(coins[lane].coin_as_ints); // Save valid coin
                     n_coins++;
-                    printf("Thread %d: Found DETI coin in lane %u: %s\n",
-                        omp_get_thread_num(), lane, coins[lane].coin_as_chars);
+                    //printf("Thread %d: Found DETI coin in lane %u: %s\n",
+                    //    omp_get_thread_num(), lane, coins[lane].coin_as_chars);
                 }
             }
 

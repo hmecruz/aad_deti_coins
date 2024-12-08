@@ -315,6 +315,7 @@ int main(int argc,char **argv)
 #endif
 #ifdef DETI_COINS_CUDA_SEARCH
     case '9':
+       // make clean; make md5_cuda_kernel.cubin; make deti_coins_cuda_kernel_search.cubin; make deti_coins_intel_cuda;
         printf("searching for %u seconds using deti_coins_cuda_search()\n",seconds);
         fflush(stdout);
         deti_coins_cuda_search(n_random_words);
@@ -369,7 +370,7 @@ int main(int argc,char **argv)
   fprintf(stderr, "       %s -s8 [seconds] [n_random_words]             # search for DETI coins using md5_cpu_neon()\n", argv[0]);
 #endif
 #ifdef DETI_COINS_CUDA_SEARCH
-  fprintf(stderr, "       %s -s9 [seconds] [n_random_words]             # search for DETI coins using CUDA\n", argv[0]);
+  fprintf(stderr, "       %s -s9 [seconds] [n_random_words]             # search for DETI coins using CUDA\n", argv[0]); // make clean; make md5_cuda_kernel.cubin; make deti_coins_cuda_kernel_search.cubin; make deti_coins_intel_cuda;
 #endif
 #ifdef DETI_COINS_CPU_SPECIAL_SEARCH
   fprintf(stderr, "       %s -s10 [seconds] [special_text]               # special search for DETI coins using md5_cpu()\n", argv[0]);
