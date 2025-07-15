@@ -1,6 +1,6 @@
 # DETI Coins Miner
 
-This project is the first practical assignment (**A1**) and focuses on mining DETI coins using various optimization techniques, including **AVX**, **AVX2**, **AVX512**, **SIMD instructions**, **OpenMP**, and **CUDA**. It also supports a **Client-Server AVX OpenMP** mining approach.
+This project focuses on mining DETI coins using various optimization techniques, including **AVX**, **AVX2**, **AVX512**, **SIMD instructions**, **OpenMP**, and **CUDA**. It also supports a **Client-Server AVX OpenMP** mining approach.
 
 The mining process is based on **MD5 hash computations** optimized for different hardware architectures.
 
@@ -82,68 +82,100 @@ make deti_coins_cuda_kernel_search.cubin
 
 ---
 
-## 🚀 Running the Miner
+# 🚀 Running the Miner
 
-After compilation, run the miner according to the desired mode:
-
-### **1. AVX / AVX2 / AVX512 (Single-threaded)**
-
-```bash
-./deti_coins_intel --mode avx
-./deti_coins_intel --mode avx2
-./deti_coins_intel --mode avx512
-```
-
-(Replace `--mode` with the desired instruction set; if no flag is provided, the default is AVX.)
+After compilation, run the miner according to the desired mode.  
+Replace `[seconds]`, `[n_random_words]`, `[n_threads]`, `[port]`, or `[special_text]` as needed.
 
 ---
 
-### **2. AVX / AVX2 + OpenMP (Multi-threaded)**
+## ✅ **1. Run MD5 Tests**
 
 ```bash
-./deti_coins_intel --mode avx_openmp --threads 8
-./deti_coins_intel --mode avx2_openmp --threads 8
+./deti_coins_intel -t
 ```
 
-Increase `--threads` according to your CPU cores.
+Runs internal MD5 correctness tests.
 
 ---
 
-### **3. Client-Server AVX OpenMP**
+## 🔥 **2. Search for DETI Coins**
 
-The project supports a client-server model where mining tasks are distributed among multiple machines.
+The general syntax is:
 
-#### Start the Server:
 ```bash
-./deti_coins_intel --server --mode avx_openmp --threads 8
+./deti_coins_intel -s[mode] [seconds] [n_random_words] [n_threads|port|special_text]
 ```
 
-#### Start a Client:
-```bash
-./deti_coins_intel --client --server-addr <SERVER_IP> --threads 4
-```
+- **`seconds`** → duration of the search (min: 120, max: 7200)  
+- **`n_random_words`** → number of random 4-byte words (default: 1, max: 9)  
+- **`n_threads`** → number of threads for OpenMP modes (default: 8)  
+- **`port`** → port for server or client modes  
+- **`special_text`** → text inserted into the DETI coin  
+
+### **Modes Table**
+
+| Mode | Command Example | Description |
+|------|----------------|-------------|
+| **0** | `./deti_coins_intel -s0 1800` | CPU-only MD5 search |
+| **1** | `./deti_coins_intel -s1 1800 4` | AVX (single-threaded) search |
+| **2** | `./deti_coins_intel -s2 1800 4 8` | AVX + OpenMP (multi-threaded) search |
+| **3** | `./deti_coins_intel -s3 1800 4` | AVX2 (single-threaded) search |
+| **4** | `./deti_coins_intel -s4 1800 4 8` | AVX2 + OpenMP (multi-threaded) search |
+| **5** | `./deti_coins_intel -s5 1800 4` | AVX512 (single-threaded) search *(if supported)* |
+| **6** | `./deti_coins_intel -s6 5000` | Starts a server on port 5000 |
+| **7** | `./deti_coins_intel -s7 1800 5000` | Client mode: connects to server on port 5000 |
+| **8** | `./deti_coins_intel -s8 1800 4` | NEON (ARM-based CPUs, single-threaded) |
+| **9** | `./deti_coins_intel -s9 1800 4` | CUDA GPU search *(requires CUDA build)* |
+| **a** | `./deti_coins_intel -sa 1800 "SPECIAL_TEXT"` | Special search inserting `SPECIAL_TEXT` |
 
 ---
 
-### **4. CUDA Mining**
+## ⚙️ **Additional Notes**
 
-Run the CUDA-accelerated miner:
+- **Minimum & Maximum Duration**:  
+  - Less than 120 seconds → forced to 120 seconds  
+  - More than 7200 seconds → forced to 7200 seconds
 
-```bash
-./deti_coins_intel_cuda --mode cuda --gpu 0
-```
+- **Defaults**:  
+  - `n_random_words` = 1  
+  - `n_threads` = 8  
+  - `special_text` = "DEFAULT"
 
-You can specify the GPU index (`--gpu`) if multiple GPUs are available.
+- **Building CUDA Version**:  
+  If CUDA mode is enabled, build required binaries first:  
+  ```bash
+  make clean
+  make md5_cuda_kernel.cubin
+  make deti_coins_cuda_kernel_search.cubin
+  make deti_coins_intel_cuda
+  ```
 
 ---
 
-## 🧹 Cleaning the Build
-
-To remove all generated binaries:
+## 🧪 **Example Full Command Set**
 
 ```bash
-make clean
+# Basic CPU search for 30 minutes
+./deti_coins_intel -s0 1800
+
+# AVX2 multi-threaded with 6 random words and 12 threads
+./deti_coins_intel -s4 3600 6 12
+
+# Server running on port 7000
+./deti_coins_intel -s6 7000
+
+# Client connecting to port 7000 for 20 minutes
+./deti_coins_intel -s7 1200 7000
+
+# Special search with custom text
+./deti_coins_intel -sa 600 "HELLO_DETI"
 ```
+
+---
+**Author:** *Tomás Oliveira e Silva*  
+*Arquiteturas de Alto Desempenho 2024/2025*  
+
 
 ---
 
